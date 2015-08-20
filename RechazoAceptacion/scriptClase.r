@@ -41,3 +41,6 @@ genera.una <- function(...){
 genera.muchas <- function(n){
     sapply(1:n, FUN=genera.una)
 }
+
+vec <- genera.muchas(500)
+hist(vec)
