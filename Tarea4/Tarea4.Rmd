@@ -1,0 +1,153 @@
+---
+title: 'Tarea4 :: Bootstrapping Regression'
+author: "Marcos Olguín Martínez"
+date: "Octubre de 2015"
+output: pdf_document
+---
+
+\pagestyle{headings}
+
+\tableofcontents
+
+\section{Introducción}
+
+Considere el modelo de regresión múltiple ordinario, $Y_{i} = x_{i}^{T}\beta + \epsilon_{i}$, para $i=1, \ldots,n$, donde las $\epsilon_{i}$ se asumen como variables aleatórias i.i.d. con media cero y varianza constante. Aquí, las $x_{i}$ y las $\beta$ son p-vectores de los predictores y parámetros, respectívamente. Un error ingénuo de bootstrapping sería volver a muestrear desde la colección de valores de respuesta para generar una nueva pseudo-respuesta, digamos una $Y_{i}^*$, para cada $x_{i}$ observada, y de este modo generar un nuevo conjunto de datos de la regresión. Entonces un vector de parámetros estimados mediante bootstrap, $\hat\beta^*$, serían calculados de esos pseudo-datos. Después de repetir el muestreo y estimación muchas veces, la distribución empírica de $\hat\beta^*$ sería usada para hacer inferencia sobre $\beta$. El **error** es que las $Y_{i}|x_{i}$ no son i.i.d. (ellos tienen diferentes medias condicionales). Por consiguiente no es apropiado generar una regresión bootstrap a los datos de la manera antes descrita.
+
+Debemos preguntarnos que variables son i.i.d. para determinar una correcta aproximación bootstrap. Las $\epsilon_{i}$ son i.i.d. dado el modelo. Por lo tanto, una estartegia más apropiada sería hacer el bootstrap a los residuales.
+
+
+\section{Regresión con Bootstrap}
+
+Empecemos por ajustar el modelo de regresión a los datos observados y obtener la respuesta ajustada $\hat y_{i}$ y los residuales $\hat\epsilon_{i}$. Muestremos un conjunto bootstrap de los residuales, $\{\hat\epsilon_{i}^*, \ldots, \hat\epsilon_{n}^*\}$, del conjunto de residuales ajustados, de manera aleatória y con reemplazo. (Notemos que las $\hat\epsilon_{i}$ en realidad no son independientes, aunque por lo general más o menos lo son.) Creamos un conjunto bootstrap de pseudo-respuestas, $Y_{i}^* = \hat y_{i} + \hat\epsilon_{i}^*$, para $i=1, \ldots,n$.
+
+Hacemos la regresión $Y^*$ sobre las $x$ para obtener un parámetro estimado bootstrap $\hat\beta^*$. Repetimos este proceso muchas veces para construir una distribución empírica para las $\hat\beta^*$ y que podemos usar para la inferencia.
+
+Este enfoque es el más apropiado para los experimentos diseñados u otros datos donde los valores para las $x_{i}$ se fijan de antemano. La estrategia de realizar bootstrap a los residuos es el objetivo primario de los métodos simples de bootstrapping para otros modelos como los modelos autorregresivos, de regresión no paramétrica y los modelos lineales generalizados.
+
+Realizar bootstrap sobre los residuales es relevante para la elección del modelo ofreciendo un ajuste apropiado a los datos observados, y en el supuesto de que los resíduos tienen varianza constante. Es importante destacar que si no se tiene la confianza de que éstas condiciones se cumplan, pensar en un método bootstrap distinto sea probablemente más apropiado.
+
+Supongamos que los datos surgieron de un estudio observacional, donde tanto la respuesta y los predictores se miden a partir de un conjunto de individuos seleccionados al azar. En este caso, los pares $z_{i}=(x_{i},y_{i})$ pueden ser vistos como los valores observados para las variables aleatórias i.i.d. $Z_{i}=(X_{i},Y_{i})$ elaboradas a partir de una distribución conjunta respuesta-predictor. Para bootstrap, muestrear $Z_{1}^*, \ldots, Z_{n}^*$ completamente al azar con reemplazo del conjunto de pares observados, $\{z_{i}, \ldots, z_{n}\}$. Aplicar el modelo de regresión a los pseudo-datos resultantes para obtener un parámetro estimado bootstrap $\hat\beta^*$. Repetir estos pasos muchas veces, para entonces proceder a la inferencia como una primera aproximación. Esta aproximación de hacer bootstrap a los casos es a veces llamada _pares bootstrap_.
+
+Si se tienen dudas acerca de la idoneidad del modelo de regresión, la constancia
+de la varianza residual, u otros supuestos de regresión, el emparejamiento bootstrap será menos sensible a las violaciónes de los supuestos que haciendo bootstrap a los residuos. El muestreo en emparejamiento bootstrap refleja más directamente el mecanismo original de la generación de datos en los casos donde los predictores no son considerados fijos.
+
+
+\section{Ejemplo corrosión}
+
+En la siguiente base de datos se muestran 13 mediciones de la pérdida de corrosión $(y_{i})$ en aleaciones de cobre y níquel, cada una con un contenido específico de hierro $(x_{i})$. De interés es el cambio en la pérdida de la corrosión en las aleaciones a medida que aumenta el contenido de hierro, con relación a la pérdida de la corrosión cuando no hay hierro. Por lo tanto, considerar la estimación de $\theta=\beta_{1} / \beta_{0}$ en una regresión lineal simple.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ej <- read.csv(file='/Users/Marcos/Documents/Maestria_ITAM/3er_Semestre/Est_Comput/Tareas/Tarea04/Ejemplo.csv',
+               header=T)
+
+ej
+```
+
+Sean $z_{i}=(x_{i},y_{i})$ para $i=1, \ldots, 13$ suponemos que adoptamos la aproximación mediante el emparejamiento bootstrap. Los datos observados producen la estimación $\hat\theta=\hat\beta_{1}/\hat\beta_{0}=-0.185$. Para $i=2, \ldots, 10000$, trazamos un conjunto de datos de arranque $\{Z_{1}^*, \ldots, Z_{13}^*\}$ para remuestrear 13 pares de datos del conjunto $\{z_{1}, \ldots, z_{13}\}$ completamente aleatórios con reemplazo. La siguiente figura muestra el histograma de los estimadores obtenidos de las regresiones de los datos bootstrap. El histograma resume la variabilidad del muestreo de $\hat\theta$ como estimador de $\theta$.
+
+```{r fig.width=5, fig.height=50, echo=FALSE, message=FALSE, warning=FALSE}
+library(png)
+library(grid)
+img <- readPNG('/Users/Marcos/Documents/Maestria_ITAM/3er_Semestre/Est_Comput/Tareas/Tarea04/Figura1.png')
+ grid.raster(img)
+```
+
+\section{Más conceptos de Bootstrap y el paquete R}
+
+Como sabemos, el _Bootstrap_ es un enfoque general de la inferencia estadística basada en la construcción de una distribución muestral de un estadístico por remuestreo de los datos a la mano. El término "Bootstrapping", debido a Efron (1979), es una alusión a la expresión "tirando a sí mismo por propio esfuerzo de uno", en este caso, usando la muestra de datos como una población de la cual repetidas muestras son tomadas. A primera vista, el enfoque parece circular, pero se ha demostrado que funciona.
+
+Hay dos paquetes de R que nos pueden ayudar a realizar el bootstrap: **Paquete bootstrap** de Efron and Tibshirani (1993) y el **Paquete boot** de Davison and Hinkley (1997). De los dos, **boot**, es un tanto más capaz y es parte de la distribución estándar de R. El bootstrap es potencialmente muy flexible y se puede utilizar de muchas maneras, para usar el paquete **boot** se requiere algo de programación.
+
+Hay varias formas de bootstrap, y, además, otros varios métodos de remuestreo que están relacionados con ella, como _jackknifing_, _validación cruzada_, _pruebas de aleatorización_, y _pruebas de permutación_. Aquí Vamos a insistir en el _bootstrap no paramétrico_.
+
+El bootstrap no paramétrico permite estimar la distribución muestral de un estadístico empíricamente sin hacer suposiciones acerca de la forma de la población, y sin derivar la distribución de muestreo de forma explícita. La idea esencial del bootstrap no paramétrico es el siguiente: Se procede a extraer una muestra de tamaño _n_ de entre los elementos de la muestra **S**, muestreando con reemplazo. Llamemos al resultado de la muestra bootstrap $S_{1}^*=\{X_{11}^*, X_{12}^*, \ldots, X_{1n}^*\}$. Es necesario muestrear con reemplazo, ya que de otra manera simplemente se reproduce la muestra original de **S**. En efecto, estamos tratando la muestra **S** como una estimación de la población **P**; es decir, cada elemento $X_{i}$ de **S** es seleccionado para la muestra bootstrap con probabilidad $1/n$, imitando la selección original de la muestra **S** de la población **P**. Repetimos este procedimiento un gran número de veces, $R$, seleccionando muchas muestras bootstrap; la $bth$ muestra de bootstrap se denota $S_{}^*=\{X_{b1}^*, X_{b2}^*, \ldots, X_{bn}^*\}$. Por consiguiente, la analogía clave de _bootstrap_ es la siguiente:
+
+**La población es a la muestra como la muestra es a las muestras bootstrap**
+
+\newpage
+
+A continuación, se calcula la estadística de $T$ para cada una de las muestras bootstrap; es decir $T_{b}^*=t(S_{b}^*)$. Entonces la distribución de $T_{b}^*$ alrededor de la estimación original $T$ es análoga a la distribución muestral del estimador $T$ alrededor del parámetro de la población $\theta$. Por ejemplo, la media de las estadísticas bootstrapped,
+
+\[
+\overline T^*= \hat E^*(T^*)=\frac{\sum_{b=1}^R T_{b}^*}{R}
+\]
+
+Estima la esperanza del estidístico bootstrap; entonces $\hat B^*= \overline T^* - T$ es un estimador del sesgo de $T$, esto es, $T-\theta$. Similarmente, la varianza bootstrap estimada de $T^*$,
+
+\[
+\widehat{Var}^*(T^*)=\frac{\sum_{b=1}^R (T_{b}^* - \overline T^*)^2 }{R-1}
+\]
+
+estima la varianza muestral de $T$. La raíz cuadrada de esta cantidad
+
+\[
+\widehat{SE}^*(T^*)=\sqrt{\frac{\sum_{b=1}^R (T_{b}^* - \overline T^*)^2 }{R-1}}
+\]
+
+es el error estándar bootstrap estimado de $T$.
+
+La selección aleatória de muestras bootstrap no es apecto escencial del bootstrap no paramétrico, y al menos en principio podríamos enumerar todas las muestras bootstrap de tamaño $n$. Entonces podríamos calcular $E^*(T^*)$ y la $Var^*(T^*)$ exactamente, en lugar de tener las estimaciones de ellos. El número de muestras bootstrap, sin embargo, es astronómicamente grande a menos que $n$ sea pequeña. Hay, por lo tanto, dos fuentes de error en la inferencia bootstrap: (1) el error inducido mediante el uso de una muestra **S** en particular para representar la población; y (2) el error de muestreo se produce al no enumerar todas las muestras bootstrap. La última fuente de error puede ser controlada haciendo el número de repeticiones bootstrap $R$ suficientemente grande.
+
+Hay varias aproximaciones para construir los intervalos de confianza bootstrap. El intervalo con teoría normal asume que el estadístico $T$ es normalmente distribuido, que a menudo es aproximadamente el caso de las estadísticas en muestras sufcientemente grandes, y utiliza la estimación bootstrap de la varianza muestreal, y tal vez de sesgo, para construir un intervalo de confianza $100(1-\alpha)\%$ de la forma
+
+\[
+\theta (T- \hat B^*) \pm z_{1- \alpha/2} \widehat{SE}^*(T^*)
+\]
+
+donde $z_{1-\alpha/2}$ es el $1-\alpha/2$ cuantil de la distribución normal estándar (es decir, 1.96 para un 95% de intervalo de confianza, cuando $\alpha=0.05$).
+
+Una aproximación alterna, llamada el _intervalo percentil bootstrap_, es usado en los cuantiles empíricos de $T_{b}^*$ para formar un intervalo de confianza para $\theta$:
+
+\[
+T_{(lower)}^* < \theta < T_{(upper)}^*
+\]
+
+donde $T_{(1)}^*, T_{(2)}^*, \ldots, T_{(R)}^*$ son las replicaciones bootstrap ordenadas del estadístico; $lower=[(R+1)\alpha/2]$; $upper=[(R+1)(1-\alpha/2)]$; y los corchetes indican redondear al entero más cercano. Por ejemplo, si $\alpha=0.05$ correspondiente a un intervalo de confianza del 95%, y R=999, entonces el lower = 25 y upper = 975.
+
+El _sesgo-corregido_, intervalo percenti acelerado (o $BC_{a}$) realiza algo mejor que los intervalos de percentiles que se acaban de describir. Para encontrar el $BC_{a}$ intervalo para $\theta$ calcular:
+
+\[
+z=\Phi^{-1}\left[ \frac{\#_{b=1}^R(T_{b}^* \le T)}{R+1} \right]
+\]
+
+donde $\Phi^{-1}(\cdot)$ es la función cuantil de la normal estándar, y $\#(T_{b}^* \le T) / (R+1)$ es la proporción (ajustada) de repeticiones bootstrap en o por debajo de la estimación T de $\theta$ con la muestra original.
+
+Si la distribución muestral bootstrap es simétrica, y si $T$ es insesgada, entonces esta proporción será cercana a 0.5, y el factor de corrección z será cercano a 0.
+
+- Sea $T_{(-i)}$ que representa el valor de $T$ que se produce cuando la _i_ th observación es borrada de la muestra; hay _n_ de esas cantidades. Sea $\overline T$ el promedio de las $T_{(-i)}$; tal que $\overline T=\sum_{i=1}^n T_{(-i)}/n$. Entonces calculmos
+
+\[
+a=\frac{\sum_{i=1}^n(\overline T - T_{(-i)})^3}{6 \left[ \sum_{i=1}^n (T_{(-i)}-\overline T)^2 \right]^{\frac{3}{2}}}
+\]
+
+
+- Con el factor de corrección $z$ y $a$ a la mano, calculamos
+
+\[
+a_{1}=\Phi \left[ z+\frac{z-z_{1-\alpha/2}}{1-a(z-z_{1-\alpha/2})}  \right]
+\]
+
+\[
+a_{2}=\Phi \left[ z+\frac{z+z_{1-\alpha/2}}{1-a(z+z_{1-\alpha/2})}  \right]
+\]
+
+donde $\Phi(\cdot)$ es la función de distribución acumulativa de la normal estándar. Los valores $a_{1}$ y $a_{2}$ son usados para localizar los puntos finales del intervalo de confianza percentil corregido
+
+\[
+T_{(lower^*)}^* < \theta < T_{(upper^*)}^*
+\]
+
+donde $lower^*=[Ra_{1}]$ y $upper^*=[Ra_{2}]$. Cuando los factores de corrección $a$ y $z$ son cero, $a_{1}=\Phi(-z_{1-\alpha/2})=\Phi(z_{\alpha/2})=\alpha/2$, y $a_{2}=\Phi(z_{1-\alpha/2})=1-\alpha/2$, el cual corresponde al intervalo percentil (sin corregir).
+
+Para obtener suficiente precisión del 95% percentil bootstrap o el intervalo de confianza $BC_{a}$, el número de muestras bootstrap, _R_, debe ser del orden de 1000 o más; para los intervalos bootstrap de la teoría normal podemos salir con un menor valor de _R_, por ejemplo, del orden de 100 o más, ya que todo lo que necesitamos hacer es estimar el error estándar de la estadística.
+
+**Para ver dos ejemplos revisar la aplicación en shiny de esta tarea.**
+
+
+
+\section{Bibliografía}
+
+Fox, John and Weisberg, Sanford. Bootstrapping Regression Models in R. last revision: 5 June 2012. URL: \url{http://socserv.socsci.mcmaster.ca/jfox/Books/Companion/appendix/Appendix-Bootstrapping.pdf}
+
+Geof H. Givens and Jennifer A. Hoeting. Computational Statistics. Department of Statistics, Colorado State University, Fort Collins, CO.
+
